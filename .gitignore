@@ -1,0 +1,26 @@
+# Data files
+*.csv
+*.xlsx
+*.xls
+*.db
+*.sqlite
+
+# Model files
+*.pkl
+*.h5
+*.joblib
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.env
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# IDE specific
+.idea/
+.vscode/
