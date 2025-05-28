@@ -42,11 +42,19 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Model & Preprocessor Paths ---
-BASE_MODEL_PATH = "/Users/macbookpro/Desktop/POC1/models/"
+# BASE_MODEL_PATH = "/Users/macbookpro/Desktop/POC1/models/"
+# XGB_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "xgboost_model.json")
+# RF_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "rf_model.joblib")
+# LOGISTIC_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "logistic_model.joblib")
+# OHE_PATH = os.path.join(BASE_MODEL_PATH, "one_hot_encoder.joblib")
+
+BASE_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'models')
+
 XGB_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "xgboost_model.json")
 RF_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "rf_model.joblib")
 LOGISTIC_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "logistic_model.joblib")
 OHE_PATH = os.path.join(BASE_MODEL_PATH, "one_hot_encoder.joblib")
+
 
 # --- Feature Name Definitions ---
 NUMERICAL_FEATURE_NAMES = [
