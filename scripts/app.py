@@ -311,17 +311,15 @@ def individual_prediction_page(current_models, current_ohe):
         selected_area_type = st.selectbox(
             "Area Type", ["Urban", "Rural"], index=0)
         input_data['rural_urban_y'] = 1 if selected_area_type == "Rural" else 0
-        input_data['school_category'] = st.number_input(
-            "School Category Code", min_value=1, max_value=10, value=3)
-        input_data['school_type'] = st.number_input(
-            "School Type Code", min_value=1, max_value=10, value=3)
+        input_data['school_category'] = 3
+        input_data['school_type'] = 3
         st.markdown("**School Support (Tick if Yes):**")
         input_data['midday_meal_access'] = 1 if st.checkbox(
             "Midday Meal", value=True) else 0
         input_data['free_text_books_access'] = 1 if st.checkbox(
             "Free Textbooks", value=True) else 0
         input_data['free_uniform_access'] = 1 if st.checkbox(
-            "Free Uniforms", value=True) else 0  # Corrected key
+            "Free Uniforms", value=True) else 0
         input_data['internet_access_home'] = 1 if st.checkbox(
             "Internet at Home", value=False) else 0
         input_data['medical_checkups'] = 1 if st.checkbox(
@@ -349,7 +347,7 @@ def individual_prediction_page(current_models, current_ohe):
             return
 
         input_df_raw = pd.DataFrame([input_data])
-        input_df = input_df_raw.copy()  # Work on a copy for calculations
+        input_df = input_df_raw.copy()
 
         input_df['infrastructure_score'] = 0.1
         try:
@@ -418,14 +416,11 @@ def individual_prediction_page(current_models, current_ohe):
                             display_prob_for_gauge, primary_model_for_gauge = rf_prob, "Random Forest"
                             risk_tier_label, risk_class = get_risk_tier_details(
                                 rf_prob)
-                            # Note: RF might have a different optimal threshold for binary prediction
-                            # For simplicity, we're not showing a binary prediction for fallback models here
+
                             predicted_outcome_text = f"Primary Model (XGBoost) Failed. Showing RF."
                     except Exception as e:
                         rf_prob = None
                         st.warning(f"RF Error: {e}")
-                # Try LR if RF also failed or not available
-                # if still not set
                 if primary_model_for_gauge == "N/A" and current_models.get("logistic"):
                     try:
                         lr_prob = float(current_models["logistic"].predict_proba(
@@ -456,7 +451,6 @@ def individual_prediction_page(current_models, current_ohe):
                     st.markdown(
                         f"<p class='prediction-outcome {predicted_outcome_class}'>{predicted_outcome_text}</p>", unsafe_allow_html=True)
 
-                # Title reflects gauge source
                 st.markdown(f"#### {primary_model_for_gauge} Risk Profile")
                 st.plotly_chart(create_risk_gauge_chart(
                     display_prob_for_gauge, primary_model_for_gauge), use_container_width=True)
@@ -480,7 +474,7 @@ def individual_prediction_page(current_models, current_ohe):
                         st.markdown(f"- {tier}: {desc}")
             with results_col2:
                 st.markdown("#### Other Model Probabilities & Interventions")
-                if xgb_prob is not None and primary_model_for_gauge != "XGBoost":  # If XGB was calc but not used for gauge
+                if xgb_prob is not None and primary_model_for_gauge != "XGBoost":
                     st.metric("XGBoost Prob.", f"{xgb_prob:.2%}")
                 if rf_prob is not None:
                     st.metric("Random Forest Prob.", f"{rf_prob:.2%}")
@@ -489,7 +483,7 @@ def individual_prediction_page(current_models, current_ohe):
 
                 st.markdown("##### Recommended Interventions:")
                 recommendations = get_intervention_recommendations_detailed(
-                    current_risk_tier_for_card)  # Use tier from displayed prob
+                    current_risk_tier_for_card)
                 for rec in recommendations:
                     st.markdown(rec)
             with st.expander("🔍 Debug Info"):
@@ -590,7 +584,6 @@ def batch_analysis_page(current_models, current_ohe):
                     col1, col2, col3, col4 = st.columns(4)  # Summary metrics
                     # ... (summary metrics display as before)
                     vcol1, vcol2 = st.columns(2)  # Visualizations
-                    # ... (visualizations as before)
                     st.subheader("📋 Detailed Results")
                     st.dataframe(results_df.sort_values(
                         'dropout_probability', ascending=False))
@@ -611,7 +604,7 @@ def model_performance_page():
     rf_test_metrics = {'acc': 0.7679,
                        'prec': 0.3960, 'rec': 0.6399, 'f1': 0.4890}
     xgb_test_metrics = {'acc': 0.7821, 'prec': 0.4102,
-                        'rec': 0.6103, 'f1': 0.4905}  # Using test data
+                        'rec': 0.6103, 'f1': 0.4905}
     ens_test_metrics = {'acc': 0.7199,
                         'prec': 0.3481, 'rec': 0.7530, 'f1': 0.4761}
     performance_data = {
@@ -736,21 +729,18 @@ def risk_analytics_page():
     st.subheader("📋 Detailed XGBoost Risk Tier Analysis (Test Set)")
     df_xgb_risk['Students at Risk (Expected Dropouts)'] = (
         df_xgb_risk['Student Count'] * df_xgb_risk['Actual Dropout Rate (%)'] / 100).round().astype(int)
-    # Intervention Priority is subjective but helps guide action
     df_xgb_risk['Intervention Priority'] = [
         'Lowest', 'Low', 'Medium', 'High', 'Highest/Critical']
     st.dataframe(df_xgb_risk[['Risk Tier', 'Student Count', 'Student Population (%)', 'Actual Dropout Rate (%)', 'Students at Risk (Expected Dropouts)', 'Intervention Priority']],
                  use_container_width=True)
 
-    # Key insights and recommendations from your previous app structure
     st.subheader("🔍 Key Insights from XGBoost Test Set Analysis")
     total_test_students = df_xgb_risk['Student Count'].sum()
-    # Calculate for 'High' and 'Very High' tiers
+
     high_very_high_tiers_df = df_xgb_risk[df_xgb_risk['Risk Tier'].isin(
         ['High (0.6-0.8)', 'Very High (>=0.8)'])]
     high_vh_students_count = high_very_high_tiers_df['Student Count'].sum()
 
-    # Calculate weighted average dropout rate for High/Very High tiers
     if high_vh_students_count > 0:
         avg_high_vh_dropout_rate = np.average(
             high_very_high_tiers_df['Actual Dropout Rate (%)'], weights=high_very_high_tiers_df['Student Count'])
@@ -801,13 +791,11 @@ def model_testing_page(current_models, current_ohe):
     def process_test_profile(profile_data_dict):
         profile_df = pd.DataFrame([profile_data_dict])
 
-        # Calculate expected_age if grade is present
         if 'grade' in profile_df.columns:
             profile_df['expected_age'] = profile_df['grade'] + \
-                6  # Consistent with individual prediction page
+                6
 
-        # Apply engineered feature calculations
-        profile_df['infrastructure_score'] = 0.1  # Hardcoded
+        profile_df['infrastructure_score'] = 0.1
         try:
             profile_df = create_socioeconomic_index(profile_df.copy())
             profile_df = create_school_support_score(profile_df.copy())
@@ -815,18 +803,16 @@ def model_testing_page(current_models, current_ohe):
         except Exception as e_calc:
             st.error(
                 f"Error calculating engineered features for test profile: {e_calc}")
-            return None, None  # Indicate failure
+            return None, None
 
-        # Preprocess data (OHE, column alignment)
         processed_df_raw_ohe = preprocess_data_with_saved_ohe(
             profile_df, current_ohe, CATEGORICAL_FEATURE_NAMES_FOR_OHE,
             EXPECTED_COLUMNS_AFTER_OHE_RAW, NUMERICAL_FEATURE_NAMES
         )
         if processed_df_raw_ohe.empty:
             st.error("Preprocessing failed for test profile.")
-            return None, processed_df_raw_ohe  # Return raw ohe for debugging if it exists
+            return None, processed_df_raw_ohe
 
-        # Rename columns to what model expects
         df_for_model = processed_df_raw_ohe.copy()
         if len(df_for_model.columns) == len(MODEL_EXPECTS_THESE_EXACT_NAMES):
             df_for_model.columns = MODEL_EXPECTS_THESE_EXACT_NAMES
@@ -840,8 +826,6 @@ def model_testing_page(current_models, current_ohe):
     st.write(
         "Define profiles for a high-risk and a low-risk student to check model response.")
 
-    # Define base features for test profiles
-    # (Using the same structure as your individual_prediction_page form inputs)
     very_high_risk_base_features = {
         'age': 15, 'grade': 5, 'gender': 'Female', 'caste': 'ST',
         'father_education': 'Primary', 'family_income': '< ₹2 Lakhs',
@@ -939,13 +923,9 @@ def model_testing_page(current_models, current_ohe):
         # For simplicity, we'll use the fixed average_student_base_features for now
         st.json(average_student_base_features)
 
-    features_for_sensitivity = [  # Select numerical features suitable for varying
+    features_for_sensitivity = [
         'attendance_rate', 'grade_performance', 'distance_to_school',
         'age', 'grade', 'student_teacher_ratio',
-        # 'infrastructure_score', # This is hardcoded
-        # 'socioeconomic_index', # These are calculated, so vary their base components instead
-        # 'school_support_score',
-        # 'accessibility_score'
     ]
     selected_feature_to_vary = st.selectbox(
         "Select feature to vary:", features_for_sensitivity, index=0)
@@ -957,14 +937,13 @@ def model_testing_page(current_models, current_ohe):
         elif selected_feature_to_vary == 'distance_to_school':
             min_val, max_val = 0.0, 20.0
         elif selected_feature_to_vary == 'age':
-            # Age relative to grade
             min_val, max_val = average_student_base_features['grade'] + \
                 0, average_student_base_features['grade'] + 10
         elif selected_feature_to_vary == 'grade':
             min_val, max_val = 1, 12
         elif selected_feature_to_vary == 'student_teacher_ratio':
             min_val, max_val = 10.0, 70.0
-        else:  # Fallback, may need adjustment based on feature
+        else:
             min_val, max_val = float(default_val) * \
                 0.5, float(default_val) * 1.5
             if min_val == max_val and min_val == 0:
@@ -972,7 +951,7 @@ def model_testing_page(current_models, current_ohe):
             elif min_val == max_val:
                 max_val = min_val + 1.0
 
-        num_steps = 11  # Odd number for a middle point if needed
+        num_steps = 11
         varied_values = np.linspace(min_val, max_val, num_steps)
         probabilities = []
 
@@ -984,7 +963,6 @@ def model_testing_page(current_models, current_ohe):
             temp_student_profile = average_student_base_features.copy()
             temp_student_profile[selected_feature_to_vary] = value
 
-            # Recalculate expected_age if grade is varied
             if selected_feature_to_vary == 'grade':
                 temp_student_profile['expected_age'] = int(value) + 6
             elif 'grade' in temp_student_profile:  # else ensure expected_age is based on the base grade
@@ -1004,7 +982,6 @@ def model_testing_page(current_models, current_ohe):
                     st.warning(
                         f"Prediction failed for {selected_feature_to_vary}={value}: {e}")
             else:
-                # Add NaN if preprocessing fails for a point
                 probabilities.append(np.nan)
             progress_bar_sens.progress((i + 1) / num_steps)
 
@@ -1013,8 +990,7 @@ def model_testing_page(current_models, current_ohe):
             probabilities) if not np.isnan(p)]
         plot_varied_values = [varied_values[i] for i in valid_indices]
         plot_probabilities = [probabilities[i] *
-                              100 for i in valid_indices]  # As percentage
-
+                              100 for i in valid_indices]
         if plot_varied_values:
             fig_sensitivity = go.Figure(go.Scatter(
                 x=plot_varied_values, y=plot_probabilities, mode='lines+markers'))
@@ -1060,7 +1036,7 @@ def main():
     if st.session_state.get('ohe_loaded', False):
         st.sidebar.success("✅ OHE Encoder Loaded")
     else:
-        st.sidebar.error("❌ OHE Encoder FAILED to load!")  # Emphasize
+        st.sidebar.error("❌ OHE Encoder FAILED to load!")
     if st.session_state.get('rf_loaded', False):
         st.sidebar.info("ℹ️ Random Forest Loaded")
     if st.session_state.get('logistic_loaded', False):

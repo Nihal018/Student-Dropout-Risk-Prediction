@@ -2,7 +2,7 @@
 
 [![Python Version](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)]([Link to Live Demo if applicable])
+[![Streamlit App](https://student-dropout-risk-prediction-zeinp6fes885nejdwrxmat.streamlit.app/)](https://student-dropout-risk-prediction-zeinp6fes885nejdwrxmat.streamlit.app/)
 
 ## 🎯 Overview & Problem Statement
 
@@ -30,7 +30,7 @@ This project utilizes a synthetically generated dataset designed to mimic real-w
 
 ### 1. Data Source & Generation (`Data_creation_and_preprocessing.ipynb`)
 
-- **Inspiration:** The dataset structure is inspired by data typically available from portals like UDISE+ (Unified District Information System for Education) and ASER (Annual Status of Education Report).
+- **Inspiration:** The dataset structure is inspired by data typically available from portals like UDISE+ (Unified District Information System for Education).
 - **Synthetic Data:** A synthetic dataset of **3 million student records** (`synthetic_student_data_3M.csv`) is generated to provide a large and diverse base for model training. This process simulates various student attributes.
 - **Initial Raw Features Simulated:**
   - Demographics: `student_id`, `age`, `gender`, `caste_category` (renamed to `caste` later), `father_education`, `family_income`.
@@ -66,7 +66,7 @@ This notebook loads the synthetic raw data and performs extensive EDA and prepro
   - Handling of missing values (imputation strategies employed).
   - Renaming columns for clarity and consistency.
   - Conversion of binary features (e.g., Yes/No to 1/0).
-  - Scaling: `RobustScaler` applied to `infrastructure_score` during EDA/preprocessing stages before feeding to some models. _(Note: The final `model.ipynb` might handle scaling differently per model, e.g., XGBoost often doesn't require explicit scaling of inputs)._
+  - Scaling: `RobustScaler` applied to `infrastructure_score` during EDA/preprocessing stages before feeding to models.
   - The `EDA.ipynb` saves the `preprocessed_student_data.csv` which is then used by `model.ipynb`.
 
 ### 3. Final Modeling Dataset (`model.ipynb`)
@@ -166,7 +166,7 @@ student-dropout-prediction/
 ### Data and Model Setup
 
 1.  **Run the notebooks sequentially:**
-    - Execute `notebooks/Data_creation_and_preprocessing.ipynb` to generate `synthetic_student_data_3M.csv` in `data/raw/`.
+    - Execute `notebooks/Data_creation_and_preprocessing.ipynb` to generate `synthetic_student_data_combined.csv` in `data/processed/`.
     - Then, run `notebooks/EDA.ipynb` to perform EDA and generate `preprocessed_student_data.csv` in `data/processed/`.
     - Finally, run `notebooks/model.ipynb` to train models and save the necessary artifacts (e.g., `xgboost_model.json`, `one_hot_encoder.joblib`, etc.) into the `models/` directory.
       _(Important: Ensure the file paths for saving/loading data and models in the notebooks are correctly set up to use these relative paths if you want portability. Your current `app.py` uses an absolute path for `BASE_MODEL_PATH` which should be changed to `models/` for a GitHub project.)_
@@ -211,14 +211,10 @@ _*(Placeholder: Screenshot of the model performance comparison chart or the risk
 - **Automated Retraining Pipelines:** Keep the model updated.
 - **Counselor Recommendation Integration:** Incorporate qualitative inputs.
 
-## 📄 License
-
-This project is licensed under the MIT License. (See `LICENSE.md` if you choose to add one).
-
 ## ✍️ Author / Contributors
 
 - **[Your Name/Team Name]**
-- GitHub: `https://github.com/[YourGitHubUsername]`
-- LinkedIn: `[Your LinkedIn Profile URL (Optional)]`
+- GitHub: `https://github.com/Nihal018`
+- LinkedIn: `https://www.linkedin.com/in/nihal-choutapelly-9515b6229/`
 
 ---
