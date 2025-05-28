@@ -20,7 +20,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Enhanced CSS styling (Your existing CSS block)
 st.markdown("""
 <style>
     .main-header { font-size: 2.5rem; color: #1f77b4; text-align: center; margin-bottom: 2rem; font-weight: bold; }
@@ -42,11 +41,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Model & Preprocessor Paths ---
-# BASE_MODEL_PATH = "/Users/macbookpro/Desktop/POC1/models/"
-# XGB_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "xgboost_model.json")
-# RF_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "rf_model.joblib")
-# LOGISTIC_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "logistic_model.joblib")
-# OHE_PATH = os.path.join(BASE_MODEL_PATH, "one_hot_encoder.joblib")
 
 BASE_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'models')
 
@@ -91,7 +85,6 @@ CATEGORICAL_FEATURES_MAP_FOR_FORM = {
 RAW_INPUT_FEATURES_FORM = NUMERICAL_FEATURE_NAMES + \
     CATEGORICAL_FEATURE_NAMES_FOR_OHE
 
-# XGBoost Optimal Threshold (from notebook validation analysis, e.g., cell 24)
 XGB_OPTIMAL_THRESHOLD = 0.25
 
 
@@ -285,8 +278,6 @@ def get_intervention_recommendations_detailed(risk_tier_label):
     recommendations = {"Very High": ["🚨 **Immediate & Intensive Intervention Required**", "• Assign a dedicated counselor/mentor for daily check-ins.", "• Urgent parent/guardian meeting to develop a joint support plan.", "• Explore immediate financial assistance/scholarships if socio-economic factors are key.", "• Implement a highly personalized and flexible learning plan.", "• Daily attendance monitoring and immediate follow-up on absences.", "• Consider alternative schooling options if mainstream is unsuitable."], "High": ["⚠️ **Proactive & Targeted Support Needed**", "• Weekly counseling sessions and regular academic tutoring.", "• Small group interventions focusing on specific skill gaps.", "• Connect family with community support services if applicable.", "• Bi-weekly attendance and performance reviews with teacher/mentor.", "• Provide necessary learning materials and a conducive study environment if possible."], "Medium": ["📊 **Consistent Monitoring & Support**",
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                "• Monthly check-ins with teachers and pastoral care staff.", "• Enrollment in peer support groups or study skills workshops.", "• Regular monitoring of academic performance trends and attendance.", "• Offer encouragement and positive reinforcement for effort and improvements.", "• Ensure access to all available school support facilities (library, meals etc.)."], "Low": ["✅ **Preventive Measures & Engagement**", "• Quarterly academic progress reviews and goal setting.", "• Participation in motivational programs and extracurricular activities.", "• Career guidance and aspiration-building sessions.", "• Maintain open communication channels with student and family."], "Very Low": ["🌟 **Maintain Positive Trajectory & Enrich**", "• Continue standard educational support and encouragement.", "• Offer opportunities for peer mentoring or leadership roles.", "• Provide access to enrichment programs and advanced learning opportunities.", "• Celebrate successes and maintain a supportive school environment."]}
     return recommendations.get(risk_tier_label, ["No specific recommendations available."])
-
-# --- Streamlit Page Functions ---
 
 
 def individual_prediction_page(current_models, current_ohe):
@@ -514,8 +505,6 @@ def individual_prediction_page(current_models, current_ohe):
             st.error(f"Overall Prediction Error: {e}")
 
 
-# --- Batch Analysis Page, Model Performance, Risk Analytics, Model Testing ---
-# (These functions should be copied from your latest app.py as they were mostly complete)
 def batch_analysis_page(current_models, current_ohe):
     st.markdown('<h2 class="sub-header">📊 Batch Student Analysis</h2>',
                 unsafe_allow_html=True)
@@ -670,7 +659,6 @@ def risk_analytics_page():
     st.markdown('<h2 class="sub-header">📊 Risk Tier Analytics (Based on Test Set Behavior)</h2>',
                 unsafe_allow_html=True)
 
-    # This data IS from the TEST SET evaluation of XGBoost (Optimized) from model.ipynb (cell 28 output)
     risk_tier_data_xgb = {
         'Risk Tier': ['Very Low (<0.2)', 'Low (0.2-0.4)', 'Medium (0.4-0.6)', 'High (0.6-0.8)', 'Very High (>=0.8)'],
         # Percentage of total test students in this predicted tier
@@ -691,7 +679,6 @@ def risk_analytics_page():
                           title="Student Population % per Predicted Risk Tier",
                           hole=0.3,
                           color_discrete_sequence=['#2E8B57', '#4682B4', '#DAA520', '#CD853F', '#DC143C'])
-        # Emphasize high risk tiers
         fig_dist.update_traces(textinfo='percent+label',
                                pull=[0, 0, 0, 0.05, 0.1])
         st.plotly_chart(fig_dist, use_container_width=True)
@@ -716,9 +703,7 @@ def risk_analytics_page():
     st.subheader("📈 Risk Tier Performance: Multi-Model Comparison (Test Set)")
     st.caption(
         "Compares actual dropout rates within each model's own definition of risk tiers.")
-    # This data IS from the TEST SET evaluations (cell 28 of notebook) for each model's own tiering.
     comparison_data = {
-        # Generic labels for common x-axis
         'Risk Tier Category': ['Very Low', 'Low', 'Medium', 'High', 'Very High'],
         'XGBoost (Actual Dropout %)': [7.54, 27.60, 48.05, 67.92, 85.89],
         'Random Forest (Actual Dropout %)': [3.46, 8.04, 19.88, 34.56, 66.76],
