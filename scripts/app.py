@@ -41,14 +41,25 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Model & Preprocessor Paths ---
+# Fix: Use absolute paths to ensure consistent file resolution
 
-BASE_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'models')
 
-XGB_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "xgboost_model.json")
-RF_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "rf_model.joblib")
-LOGISTIC_MODEL_PATH = os.path.join(BASE_MODEL_PATH, "logistic_model.joblib")
-OHE_PATH = os.path.join(BASE_MODEL_PATH, "one_hot_encoder.joblib")
+def get_absolute_model_path(filename):
+    """Get absolute path for model files"""
+    # Get the directory where app.py is located
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+    # Go up one level and then into models directory
+    models_dir = os.path.join(app_dir, '..', 'models')
+    # Normalize the path
+    models_dir = os.path.normpath(models_dir)
+    return os.path.join(models_dir, filename)
 
+
+# Use absolute paths
+XGB_MODEL_PATH = get_absolute_model_path("xgboost_model.json")
+RF_MODEL_PATH = get_absolute_model_path("rf_model.joblib")
+LOGISTIC_MODEL_PATH = get_absolute_model_path("logistic_model.joblib")
+OHE_PATH = get_absolute_model_path("one_hot_encoder.joblib")
 
 # --- Feature Name Definitions ---
 NUMERICAL_FEATURE_NAMES = [
@@ -88,44 +99,68 @@ RAW_INPUT_FEATURES_FORM = NUMERICAL_FEATURE_NAMES + \
 XGB_OPTIMAL_THRESHOLD = 0.25
 
 
-@st.cache_resource
-def load_ohe_encoder_cached(path):
+# Fix: Remove @st.cache_resource and use regular functions with session state
+def load_ohe_encoder(path):
+    """Load OneHotEncoder without caching"""
     try:
+        if not os.path.exists(path):
+            st.sidebar.error(f"OHE file not found at: {path}")
+            return None
         encoder = joblib.load(path)
-        st.session_state.ohe_loaded = True
         if hasattr(encoder, 'feature_names_in_'):
             st.sidebar.info(
                 f"OHE loaded. Fitted on: {list(encoder.feature_names_in_)}")
         return encoder
     except Exception as e:
         st.sidebar.error(f"OHE load error: {e}")
-        st.session_state.ohe_loaded = False
         return None
 
 
-@st.cache_resource
-def load_all_models_cached():
+def load_all_models():
+    """Load all models without caching"""
     models_dict = {"xgb": None, "rf": None, "logistic": None}
+
+    # Check if models directory exists
+    models_dir = os.path.dirname(XGB_MODEL_PATH)
+    if not os.path.exists(models_dir):
+        st.sidebar.error(f"Models directory not found: {models_dir}")
+        return models_dict
+
+    # Load XGBoost
     try:
-        xgb_model_loaded = xgb.Booster()
-        xgb_model_loaded.load_model(XGB_MODEL_PATH)
-        models_dict["xgb"] = xgb_model_loaded
-        st.session_state.xgb_loaded = True
+        if not os.path.exists(XGB_MODEL_PATH):
+            st.sidebar.error(f"XGB file not found at: {XGB_MODEL_PATH}")
+        else:
+            xgb_model_loaded = xgb.Booster()
+            xgb_model_loaded.load_model(XGB_MODEL_PATH)
+            models_dict["xgb"] = xgb_model_loaded
+            st.session_state.xgb_loaded = True
     except Exception as e:
         st.sidebar.error(f"XGB load error: {e}")
         st.session_state.xgb_loaded = False
+
+    # Load Random Forest
     try:
-        models_dict["rf"] = joblib.load(RF_MODEL_PATH)
-        st.session_state.rf_loaded = True
+        if not os.path.exists(RF_MODEL_PATH):
+            st.sidebar.warning(f"RF file not found at: {RF_MODEL_PATH}")
+        else:
+            models_dict["rf"] = joblib.load(RF_MODEL_PATH)
+            st.session_state.rf_loaded = True
     except Exception as e:
         st.sidebar.warning(f"RF load error: {e}")
         st.session_state.rf_loaded = False
+
+    # Load Logistic Regression
     try:
-        models_dict["logistic"] = joblib.load(LOGISTIC_MODEL_PATH)
-        st.session_state.logistic_loaded = True
+        if not os.path.exists(LOGISTIC_MODEL_PATH):
+            st.sidebar.warning(f"LR file not found at: {LOGISTIC_MODEL_PATH}")
+        else:
+            models_dict["logistic"] = joblib.load(LOGISTIC_MODEL_PATH)
+            st.session_state.logistic_loaded = True
     except Exception as e:
         st.sidebar.warning(f"LR load error: {e}")
         st.session_state.logistic_loaded = False
+
     return models_dict
 
 
@@ -582,8 +617,35 @@ def batch_analysis_page(current_models, current_ohe):
                         get_risk_tier_details(p)[0] for p in xgb_probs_batch]
                     st.success("✅ Batch analysis complete!")
                     col1, col2, col3, col4 = st.columns(4)  # Summary metrics
-                    # ... (summary metrics display as before)
+                    col1.metric("Total Students", f"{len(results_df):,}")
+                    col2.metric("High/Very High Risk",
+                                f"{len(results_df[results_df['dropout_probability'] >= 0.6]):,}")
+                    col3.metric("Avg. Dropout Prob.",
+                                f"{results_df['dropout_probability'].mean()*100:.1f}%")
+                    col4.metric("Expected Dropouts",
+                                f"{(results_df['dropout_probability'] > XGB_OPTIMAL_THRESHOLD).sum():,}")
+
                     vcol1, vcol2 = st.columns(2)  # Visualizations
+                    with vcol1:
+                        fig_risk_dist = px.pie(
+                            results_df['risk_tier'].value_counts(
+                            ).reset_index(),
+                            values='count', names='risk_tier',
+                            title="Risk Tier Distribution"
+                        )
+                        st.plotly_chart(
+                            fig_risk_dist, use_container_width=True)
+
+                    with vcol2:
+                        fig_prob_hist = px.histogram(
+                            results_df, x='dropout_probability', nbins=20,
+                            title="Dropout Probability Distribution"
+                        )
+                        fig_prob_hist.add_vline(x=XGB_OPTIMAL_THRESHOLD, line_dash="dash",
+                                                line_color="red", annotation_text="Threshold")
+                        st.plotly_chart(
+                            fig_prob_hist, use_container_width=True)
+
                     st.subheader("📋 Detailed Results")
                     st.dataframe(results_df.sort_values(
                         'dropout_probability', ascending=False))
@@ -792,8 +854,7 @@ def model_testing_page(current_models, current_ohe):
         profile_df = pd.DataFrame([profile_data_dict])
 
         if 'grade' in profile_df.columns:
-            profile_df['expected_age'] = profile_df['grade'] + \
-                6
+            profile_df['expected_age'] = profile_df['grade'] + 6
 
         profile_df['infrastructure_score'] = 0.1
         try:
@@ -1014,10 +1075,23 @@ def model_testing_page(current_models, current_ohe):
 def main():
     st.markdown('<h1 class="main-header">🎓 Student Dropout Risk Prediction System</h1>',
                 unsafe_allow_html=True)
+
+    # Initialize session state for model loading status
     if 'app_initialized' not in st.session_state:
-        st.session_state.ml_models = load_all_models_cached()
-        st.session_state.ohe_encoder = load_ohe_encoder_cached(OHE_PATH)
-        st.session_state.app_initialized = True
+        st.session_state.app_initialized = False
+        st.session_state.ml_models = None
+        st.session_state.ohe_encoder = None
+        st.session_state.xgb_loaded = False
+        st.session_state.rf_loaded = False
+        st.session_state.logistic_loaded = False
+        st.session_state.ohe_loaded = False
+
+    # Load models and encoder every time (no caching)
+    st.session_state.ml_models = load_all_models()
+    st.session_state.ohe_encoder = load_ohe_encoder(OHE_PATH)
+    st.session_state.ohe_loaded = st.session_state.ohe_encoder is not None
+    st.session_state.app_initialized = True
+
     current_models = st.session_state.ml_models
     current_ohe = st.session_state.ohe_encoder
 
@@ -1028,7 +1102,7 @@ def main():
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📊 Model Status")
-    # ... (sidebar status checks) ...
+
     if st.session_state.get('xgb_loaded', False):
         st.sidebar.success("✅ XGBoost Model Loaded")
     else:
@@ -1045,6 +1119,15 @@ def main():
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🎯 Risk Tiers (Val. Set Behavior)")
     st.sidebar.markdown("- **Very Low**: < 20% (~7.5% actual dropout)\n- **Low**: 20-40% (~27.6% actual dropout)\n- **Medium**: 40-60% (~48.1% actual dropout)\n- **High**: 60-80% (~67.9% actual dropout)\n- **Very High**: ≥ 80% (~85.9% actual dropout)")
+
+    # Show reload button if models fail to load
+    if not st.session_state.get('xgb_loaded', False) or not st.session_state.get('ohe_loaded', False):
+        st.sidebar.markdown("---")
+        if st.sidebar.button("🔄 Reload Models", type="primary"):
+            st.session_state.ml_models = load_all_models()
+            st.session_state.ohe_encoder = load_ohe_encoder(OHE_PATH)
+            st.session_state.ohe_loaded = st.session_state.ohe_encoder is not None
+            st.rerun()
 
     if page_selection == "🎓 Individual Prediction":
         individual_prediction_page(current_models, current_ohe)
