@@ -8,7 +8,6 @@
 # Model files
 *.pkl
 *.h5
-*.joblib
 
 # Python
 __pycache__/
